@@ -1,5 +1,4 @@
 type Props = { params: { id: string } };
-
 export default function ListingDetail({ params }: Props) {
   return (
     <main className="mx-auto max-w-5xl px-4 py-10">

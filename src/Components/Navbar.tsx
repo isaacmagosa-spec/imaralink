@@ -8,8 +8,8 @@ export default function Navbar() {
           ImaraLink<span className="text-blue-600">.</span>
         </Link>
         <nav className="flex items-center gap-6 text-sm">
-          <Link href="/browse" className="hover:text-blue-600 underline-offset-4">Browse</Link>
-          <Link href="/auth" className="hover:text-blue-600 underline-offset-4">Sign In</Link>
+          <Link href="/browse" className="hover:text-blue-600">Browse</Link>
+          <Link href="/auth" className="hover:text-blue-600">Sign In</Link>
         </nav>
       </div>
     </header>
