@@ -14,6 +14,15 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // Require secret header in production so random people can't POST
+  if (process.env.NODE_ENV === "production") {
+    const secret = process.env.ADMIN_POST_SECRET;
+    const header = req.headers.get("x-admin-secret");
+    if (!secret || header !== secret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
