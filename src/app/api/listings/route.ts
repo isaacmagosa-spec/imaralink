@@ -1,60 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "../../../lib/supabaseClient";
-import { supabaseAdmin } from "../../../lib/supabaseAdmin";
+import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+type Listing = {
+  id?: string;
+  created_at?: string;
+  title: string;
+  type: "rent" | "sale";
+  price: number;
+  currency: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  city?: string | null;
+  area?: string | null;
+  location?: unknown | null;
+  description?: string | null;
+  amenities?: string[] | null;
+  images?: string[] | null;
+  status?: "active" | "inactive";
+  contact_name?: string | null;
+  contact_phone?: string | null;
+};
 
 export async function GET() {
   const { data, error } = await supabase
     .from("listings")
     .select("*")
-    .order("created_at", { ascending: false })
-    .limit(50);
+    .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ listings: data ?? [] });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ listings: (data ?? []) as Listing[] });
 }
 
 export async function POST(req: NextRequest) {
-  // Require secret header in production so random people can't POST
-  if (process.env.NODE_ENV === "production") {
-    const secret = process.env.ADMIN_POST_SECRET;
+  // Guard (optional): only allow if header matches env secret
+  const guardSecret = process.env.ADMIN_POST_SECRET;
+  if (guardSecret) {
     const header = req.headers.get("x-admin-secret");
-    if (!secret || header !== secret) {
+    if (header !== guardSecret) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   }
 
-  const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  const payload = (await req.json()) as Listing;
 
-  const required = ["title", "type", "price"] as const;
-  for (const k of required) {
-    // @ts-ignore
-    if (!body[k]) return NextResponse.json({ error: `Missing ${k}` }, { status: 400 });
-  }
-
-  const payload = {
-    title: String(body.title),
-    type: body.type === "sale" ? "sale" : "rent",
-    price: Number(body.price),
-    currency: body.currency || "KES",
-    bedrooms: Number(body.bedrooms || 0),
-    bathrooms: Number(body.bathrooms || 0),
-    city: body.city || null,
-    area: body.area || null,
-    location: body.location || null,
-    description: body.description || null,
-    amenities: Array.isArray(body.amenities) ? body.amenities : [],
-    images: Array.isArray(body.images) ? body.images : [],
-    contact_name: body.contact_name || null,
-    contact_phone: body.contact_phone || null,
-  };
-
+  // Server-side insert via service role
   const { data, error } = await supabaseAdmin
     .from("listings")
     .insert(payload)
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, listing: data }, { status: 201 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  return NextResponse.json({ listing: data as Listing }, { status: 201 });
 }
