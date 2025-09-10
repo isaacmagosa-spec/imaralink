@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getSupabaseClient } from "@/lib/supabaseClient";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 type Listing = {
   id?: string;
@@ -23,19 +23,25 @@ type Listing = {
 };
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from("listings")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from("listings")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ listings: (data ?? []) as Listing[] });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-  return NextResponse.json({ listings: (data ?? []) as Listing[] });
 }
 
 export async function POST(req: NextRequest) {
-  // Guard (optional): only allow if header matches env secret
+  // Optional guard with secret
   const guardSecret = process.env.ADMIN_POST_SECRET;
   if (guardSecret) {
     const header = req.headers.get("x-admin-secret");
@@ -44,17 +50,22 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const payload = (await req.json()) as Listing;
+  try {
+    const payload = (await req.json()) as Listing;
+    const supabaseAdmin = getSupabaseAdmin();
 
-  // Server-side insert via service role
-  const { data, error } = await supabaseAdmin
-    .from("listings")
-    .insert(payload)
-    .select()
-    .single();
+    const { data, error } = await supabaseAdmin
+      .from("listings")
+      .insert(payload)
+      .select()
+      .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    return NextResponse.json({ listing: data as Listing }, { status: 201 });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-  return NextResponse.json({ listing: data as Listing }, { status: 201 });
 }
