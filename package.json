@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:local": "next dev --turbopack -p 3001 -H 127.0.0.1"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.2",
