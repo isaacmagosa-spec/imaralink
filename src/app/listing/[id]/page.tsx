@@ -1,4 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getSupabaseClient } from "@/lib/supabaseClient";
+
+export const revalidate = 0; // always render fresh
 
 type Listing = {
   id: string;
@@ -7,93 +11,132 @@ type Listing = {
   type: "rent" | "sale";
   price: number;
   currency: string;
-  bedrooms?: number;
-  bathrooms?: number;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
   city?: string | null;
   area?: string | null;
   description?: string | null;
   images?: string[] | null;
-  contact_name?: string | null;
-  contact_phone?: string | null;
 };
 
-function baseUrl() {
-  // Production on Vercel
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  // Local dev fallback (adjust port if you run a different one)
-  return `http://127.0.0.1:${process.env.PORT ?? 3001}`;
+function formatMoney(value: number, currency: string) {
+  try {
+    return new Intl.NumberFormat("en-KE", { style: "currency", currency }).format(value);
+  } catch {
+    return `${currency} ${value.toLocaleString()}`;
+  }
 }
 
-export default async function ListingDetail({
+// Use the real title for SEO when possible.
+// Next.js (app router) passes params as a Promise in v15.
+export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
 
-  const res = await fetch(`${baseUrl()}/api/listings/${id}`, {
-    cache: "no-store",
-  });
+  try {
+    const supabase = getSupabaseClient();
+    const { data } = await supabase
+      .from("listings")
+      .select("title")
+      .eq("id", id)
+      .maybeSingle();
 
-  if (res.status === 404) {
+    const title = data?.title?.trim();
+    return {
+      title: title ? `${title} • Imaralink` : `Listing • Imaralink`,
+      description: title ? `Details for ${title} on Imaralink.` : "Listing details on Imaralink.",
+    };
+  } catch {
+    return {
+      title: `Listing • Imaralink`,
+      description: "Listing details on Imaralink.",
+    };
+  }
+}
+
+export default async function ListingPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from("listings")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    return (
+      <main className="mx-auto max-w-3xl">
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h1 className="text-2xl font-bold">Error loading listing</h1>
+          <p className="mt-2 text-red-600">{error.message}</p>
+          <div className="mt-6">
+            <Link href="/browse" className="text-blue-700 hover:underline">
+              ← Back to Browse
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!data) {
     notFound();
   }
-  if (!res.ok) {
-    throw new Error(`Failed to load listing (${res.status})`);
-  }
 
-  const { listing } = (await res.json()) as { listing: Listing };
+  const l = data as Listing;
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="text-2xl font-bold">{listing.title}</h1>
-      <p className="text-gray-600 mt-2">
-        {listing.city || ""} {listing.area ? `• ${listing.area}` : ""}
-      </p>
+    <main className="mx-auto max-w-3xl">
+      <article className="rounded-2xl bg-white p-6 shadow-sm">
+        {/* Image placeholder */}
+        <div className="mb-5 h-56 w-full rounded-xl bg-gray-100 flex items-center justify-center text-sm text-gray-500">
+          Photo coming soon
+        </div>
 
-      <section className="mt-6 space-y-3">
-        <div className="text-lg">
-          <span className="font-semibold">
-            {listing.currency} {listing.price.toLocaleString()}
-          </span>{" "}
-          <span className="uppercase text-xs ml-2 rounded bg-gray-100 px-2 py-1">
-            {listing.type}
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-2xl font-bold leading-tight">{l.title}</h1>
+          <span className="inline-flex shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] uppercase tracking-wide">
+            {l.type}
           </span>
         </div>
 
-        {!!listing.bedrooms && (
-          <div className="text-gray-700">{listing.bedrooms} bed</div>
-        )}
-        {!!listing.bathrooms && (
-          <div className="text-gray-700">{listing.bathrooms} bath</div>
-        )}
+        <div className="mt-1 text-gray-600">
+          {(l.city ?? "—")}
+          {l.area ? ` • ${l.area}` : ""}
+        </div>
 
-        {listing.description && (
-          <p className="text-gray-800 mt-4">{listing.description}</p>
-        )}
+        <div className="mt-3 text-blue-700 text-xl font-bold">
+          {formatMoney(l.price, l.currency)}
+        </div>
 
-        {(listing.images?.length ?? 0) > 0 && (
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            {listing.images!.map((src, i) => (
-              <div key={i} className="aspect-video bg-gray-100 rounded" />
-              // Swap the div above with Next/Image when real image URLs exist
-            ))}
-          </div>
-        )}
+        <div className="mt-2 text-sm text-gray-700">
+          {l.bedrooms ?? 0} bed · {l.bathrooms ?? 0} bath
+        </div>
 
-        {(listing.contact_phone || listing.contact_name) && (
-          <div className="mt-8">
-            <a
-              href={listing.contact_phone ? `tel:${listing.contact_phone}` : "#"}
-              className="inline-block rounded-md bg-blue-600 text-white px-4 py-2 hover:bg-blue-700"
-            >
-              {listing.contact_phone
-                ? `Call ${listing.contact_name ?? "owner/agent"}`
-                : `Contact ${listing.contact_name ?? "owner/agent"}`}
-            </a>
-          </div>
-        )}
-      </section>
+        {l.description ? (
+          <p className="mt-5 whitespace-pre-wrap text-gray-800">{l.description}</p>
+        ) : null}
+
+        <div className="mt-8 flex gap-3">
+          <Link
+            href={`/listing/${l.id}/contact`}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
+          >
+            Contact Owner/Agent
+          </Link>
+          <Link href="/browse" className="rounded-lg border px-4 py-2 hover:bg-gray-50 transition">
+            Back to Browse
+          </Link>
+        </div>
+      </article>
     </main>
   );
 }
