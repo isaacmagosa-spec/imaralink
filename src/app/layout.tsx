@@ -4,14 +4,19 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Imaralink • Find your next home",
-  description: "Browse rentals and homes for sale around Nairobi.",
+  title: "Imaralink",
+  description: "Browse, view, and inquire about property listings.",
+  metadataBase: new URL("https://imaralink-app.vercel.app"),
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-gray-50 text-gray-900">
+    <html lang="en" className="h-full bg-gray-50">
+      <body className="min-h-full text-gray-900 antialiased">
         <Header />
         <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
         <Footer />
