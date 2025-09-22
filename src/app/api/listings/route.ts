@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 type Listing = {
   id?: string;
@@ -22,52 +24,51 @@ type Listing = {
   contact_phone?: string | null;
 };
 
-function toInt(v: string | null, def: number) {
-  const n = v ? parseInt(v, 10) : NaN;
-  return Number.isFinite(n) ? n : def;
-}
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
-}
-
 export async function GET(req: NextRequest) {
   try {
-    const url = new URL(req.url);
-    const q = url.searchParams.get("q");
-    const type = url.searchParams.get("type"); // "rent" | "sale"
-    const city = url.searchParams.get("city");
-    const area = url.searchParams.get("area");
-    const minPrice = toInt(url.searchParams.get("minPrice"), NaN);
-    const maxPrice = toInt(url.searchParams.get("maxPrice"), NaN);
-    const bedrooms = toInt(url.searchParams.get("bedrooms"), NaN);
+    const supabase = getSupabaseClient();
+    const { searchParams } = new URL(req.url);
 
-    const limit = clamp(toInt(url.searchParams.get("limit"), 12), 1, 50);
-    const page = Math.max(1, toInt(url.searchParams.get("page"), 1));
+    const q = searchParams.get("q") ?? "";
+    const city = searchParams.get("city") ?? "";
+    const type = searchParams.get("type") ?? "";
+    const minPrice = Number(searchParams.get("minPrice") ?? "") || undefined;
+    const maxPrice = Number(searchParams.get("maxPrice") ?? "") || undefined;
+    const bedrooms = Number(searchParams.get("bedrooms") ?? "") || undefined;
+    const bathrooms = Number(searchParams.get("bathrooms") ?? "") || undefined;
+
+    const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
+    const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? "12")));
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    const supabase = getSupabaseClient();
-
-    // start query
     let query = supabase
       .from("listings")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false });
 
-    if (q && q.trim()) {
-      // match in title or description (case-insensitive)
-      query = query.or(
-        `title.ilike.%${q}%,description.ilike.%${q}%`
-      );
+    if (q) {
+      query = query.ilike("title", `%${q}%`);
     }
-    if (type === "rent" || type === "sale") query = query.eq("type", type);
-    if (city && city.trim()) query = query.ilike("city", `%${city}%`);
-    if (area && area.trim()) query = query.ilike("area", `%${area}%`);
-    if (Number.isFinite(minPrice)) query = query.gte("price", minPrice);
-    if (Number.isFinite(maxPrice)) query = query.lte("price", maxPrice);
-    if (Number.isFinite(bedrooms)) query = query.gte("bedrooms", bedrooms);
+    if (city) {
+      query = query.ilike("city", `%${city}%`);
+    }
+    if (type) {
+      query = query.eq("type", type);
+    }
+    if (typeof minPrice === "number") {
+      query = query.gte("price", minPrice);
+    }
+    if (typeof maxPrice === "number") {
+      query = query.lte("price", maxPrice);
+    }
+    if (typeof bedrooms === "number") {
+      query = query.gte("bedrooms", bedrooms);
+    }
+    if (typeof bathrooms === "number") {
+      query = query.gte("bathrooms", bathrooms);
+    }
 
-    // pagination window
     query = query.range(from, to);
 
     const { data, error, count } = await query;
@@ -81,36 +82,6 @@ export async function GET(req: NextRequest) {
       limit,
       total: count ?? 0,
     });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
-}
-
-export async function POST(req: NextRequest) {
-  // Optional guard with secret
-  const guardSecret = process.env.ADMIN_POST_SECRET;
-  if (guardSecret) {
-    const header = req.headers.get("x-admin-secret");
-    if (header !== guardSecret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
-
-  try {
-    const payload = (await req.json()) as Listing;
-    const supabaseAdmin = getSupabaseAdmin();
-
-    const { data, error } = await supabaseAdmin
-      .from("listings")
-      .insert(payload)
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    return NextResponse.json({ listing: data as Listing }, { status: 201 });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });
