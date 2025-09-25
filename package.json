@@ -7,10 +7,12 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "dev:local": "next dev --turbopack -p 3001 -H 127.0.0.1"
+    "dev:local": "next dev --turbopack -p 3001 -H 127.0.0.1",
+    "dev:lan": "next dev --turbopack -p 3001 -H 0.0.0.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.2",
+    "lucide-react": "^0.544.0",
     "next": "15.5.2",
     "react": "19.1.0",
     "react-dom": "19.1.0"
