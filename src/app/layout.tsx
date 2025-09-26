@@ -4,14 +4,14 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "ImaraLink — Stays, Rentals, and Homes to Buy",
-  description: "Find short stays like Airbnb, monthly rentals, and homes to purchase across Kenya.",
+  title: "Imaralink",
+  description: "Find short stays, monthly rentals, and homes to buy.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full">
-      <body className="min-h-full">
+    <html lang="en">
+      <body className="min-h-screen bg-[#F5F8FF] text-slate-900 antialiased">
         <Header />
         {children}
         <Footer />

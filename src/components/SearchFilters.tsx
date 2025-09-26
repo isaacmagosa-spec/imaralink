@@ -1,119 +1,111 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import SegmentedTabs from './SegmentedTabs';
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useTransition } from "react";
 
 export default function SearchFilters() {
   const router = useRouter();
-  const pathname = usePathname();
   const sp = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
-  const q     = sp.get('q') ?? '';
-  const type  = sp.get('type') ?? '';      // rent | sale
-  const min   = sp.get('min') ?? '';
-  const max   = sp.get('max') ?? '';
-  const beds  = sp.get('beds') ?? '';
-  const baths = sp.get('baths') ?? '';
+  const [q, setQ] = useState(sp.get("q") ?? "");
+  const [type, setType] = useState(sp.get("type") ?? "");
+  const [min, setMin] = useState(sp.get("min") ?? "");
+  const [max, setMax] = useState(sp.get("max") ?? "");
+  const [beds, setBeds] = useState(sp.get("beds") ?? "");
+  const [baths, setBaths] = useState(sp.get("baths") ?? "");
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function apply(e: React.FormEvent) {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const next = new URLSearchParams(sp.toString());
-
-    const map: Array<[string,string]> = [
-      ['q', (form.get('q') as string) || ''],
-      ['type', (form.get('type') as string) || ''],
-      ['min', (form.get('min') as string) || ''],
-      ['max', (form.get('max') as string) || ''],
-      ['beds', (form.get('beds') as string) || ''],
-      ['baths', (form.get('baths') as string) || ''],
-    ];
-
-    for (const [k,v] of map) {
-      if (v) next.set(k, v); else next.delete(k);
-    }
-
-    router.push(`${pathname}?${next.toString()}`);
+    const p = new URLSearchParams();
+    if (q) p.set("q", q);
+    if (type) p.set("type", type);
+    if (min) p.set("min", min);
+    if (max) p.set("max", max);
+    if (beds) p.set("beds", beds);
+    if (baths) p.set("baths", baths);
+    startTransition(() => router.push(`/browse${p.toString() ? `?${p}` : ""}`));
   }
 
-  function clearAll() {
-    router.push(pathname);
+  function clear() {
+    startTransition(() => router.push("/browse"));
+    setQ(""); setType(""); setMin(""); setMax(""); setBeds(""); setBaths("");
   }
+
+  const inputCls =
+    "w-full rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 px-3 py-2";
 
   return (
-    <section className="mb-6 rounded-2xl border bg-white/80 p-4 shadow-sm backdrop-blur">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h2 className="text-lg font-semibold text-[var(--ink-900)]">Find your next home</h2>
-        <SegmentedTabs />
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-md">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-slate-900">Find your next home</h2>
+        <a
+          href="/listing/new"
+          className="hidden sm:inline-flex rounded-lg bg-indigo-600 px-3 py-2 text-white font-medium hover:bg-indigo-700"
+        >
+          Post a Listing
+        </a>
       </div>
 
-      <form onSubmit={onSubmit} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-6">
+      <form onSubmit={apply} className="grid grid-cols-2 sm:grid-cols-6 gap-3">
         <input
-          name="q"
-          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
           placeholder="Search location or title (e.g. Kileleshwa)"
-          defaultValue={q}
-          className="rounded-lg border px-3 py-2 md:col-span-2"
+          className={`${inputCls} col-span-2 sm:col-span-2`}
         />
-
         <select
-          name="type"
-          defaultValue={type}
-          className="rounded-lg border px-3 py-2"
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          className={`${inputCls} col-span-1`}
         >
           <option value="">All</option>
           <option value="rent">Rent</option>
           <option value="sale">Buy</option>
         </select>
-
         <input
-          name="min"
-          type="number"
+          value={min}
+          onChange={(e) => setMin(e.target.value)}
           inputMode="numeric"
           placeholder="Min price"
-          defaultValue={min}
-          className="rounded-lg border px-3 py-2"
+          className={`${inputCls} col-span-1`}
         />
         <input
-          name="max"
-          type="number"
+          value={max}
+          onChange={(e) => setMax(e.target.value)}
           inputMode="numeric"
           placeholder="Max price"
-          defaultValue={max}
-          className="rounded-lg border px-3 py-2"
+          className={`${inputCls} col-span-1`}
         />
-
         <input
-          name="beds"
-          type="number"
-          min={0}
+          value={beds}
+          onChange={(e) => setBeds(e.target.value)}
+          inputMode="numeric"
           placeholder="Beds"
-          defaultValue={beds}
-          className="rounded-lg border px-3 py-2"
+          className={`${inputCls} col-span-1`}
         />
         <input
-          name="baths"
-          type="number"
-          min={0}
+          value={baths}
+          onChange={(e) => setBaths(e.target.value)}
+          inputMode="numeric"
           placeholder="Baths"
-          defaultValue={baths}
-          className="rounded-lg border px-3 py-2"
+          className={`${inputCls} col-span-1`}
         />
 
-        <div className="md:col-span-6 flex gap-2 justify-end">
+        <div className="col-span-2 sm:col-span-2 flex justify-end gap-2">
           <button
             type="button"
-            onClick={clearAll}
-            className="rounded-lg border px-4 py-2 text-[var(--ink-700)] hover:bg-[var(--brand-50)]"
+            onClick={clear}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 hover:bg-slate-50"
           >
             Clear
           </button>
           <button
             type="submit"
-            className="rounded-lg bg-[var(--brand-600)] px-5 py-2 font-medium text-white hover:bg-[var(--brand-700)]"
+            disabled={isPending}
+            className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
           >
-            Apply
+            {isPending ? "Applying…" : "Apply"}
           </button>
         </div>
       </form>

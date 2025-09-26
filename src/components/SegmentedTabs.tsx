@@ -1,50 +1,54 @@
-'use client';
+"use client";
 
-import React from 'react';
-import clsx from 'clsx';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from "next/navigation";
+import React from "react";
 
-type Tab = { key: string; label: string; };
-
+type Tab = { key: "" | "stays" | "rent" | "sale"; label: string };
 const TABS: Tab[] = [
-  { key: 'stay', label: 'Stay' }, // short stays (UI-only for now)
-  { key: 'rent', label: 'Rent' },
-  { key: 'buy',  label: 'Buy'  },
+  { key: "", label: "Explore" },
+  { key: "stays", label: "Stays" }, // maps to type=rent
+  { key: "rent", label: "Rent" },
+  { key: "sale", label: "Buy" },
 ];
 
 export default function SegmentedTabs() {
   const router = useRouter();
   const sp = useSearchParams();
-  const active = sp.get('category') ?? 'rent';
 
-  function onSelect(next: string) {
-    const params = new URLSearchParams(sp.toString());
-    params.set('category', next);
-    // Map UI category -> current DB filter (type)
-    if (next === 'buy') params.set('type', 'sale');
-    else params.set('type', 'rent'); // 'stay' & 'rent' both show rent for now
+  const activeType = sp.get("type") ?? "";
 
-    // reset pagination-ish params if you add them later
-    router.push(`/browse?${params.toString()}`);
+  function select(key: Tab["key"]) {
+    const p = new URLSearchParams(sp.toString());
+    if (key === "") {
+      p.delete("type");
+    } else if (key === "stays") {
+      p.set("type", "rent");
+    } else {
+      p.set("type", key);
+    }
+    router.push(`/browse${p.toString() ? `?${p}` : ""}`);
   }
 
   return (
-    <div className="inline-flex rounded-xl border bg-white p-1 shadow-sm">
-      {TABS.map(t => (
-        <button
-          key={t.key}
-          type="button"
-          onClick={() => onSelect(t.key)}
-          className={clsx(
-            "px-4 py-2 text-sm rounded-lg transition",
-            active === t.key
-              ? "bg-[var(--brand-600)] text-white"
-              : "text-[var(--ink-700)] hover:bg-[var(--brand-50)]"
-          )}
-        >
-          {t.label}
-        </button>
-      ))}
+    <div className="inline-flex rounded-xl bg-slate-800/30 p-1 ring-1 ring-white/10">
+      {TABS.map((t) => {
+        const selected =
+          t.key === ""
+            ? activeType === ""
+            : t.key === "stays"
+            ? activeType === "rent"
+            : activeType === t.key;
+        return (
+          <button
+            key={t.key}
+            onClick={() => select(t.key)}
+            className={`min-w-[84px] rounded-lg px-3 py-1.5 text-sm font-medium transition
+              ${selected ? "bg-white text-slate-900 shadow" : "text-slate-200 hover:bg-white/10"}`}
+          >
+            {t.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
