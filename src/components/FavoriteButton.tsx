@@ -1,52 +1,46 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
-const KEY = "imaralink:favorites";
-
-function readFavorites(): Set<string> {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return new Set();
-    return new Set<string>(JSON.parse(raw));
-  } catch {
-    return new Set();
-  }
-}
-function writeFavorites(ids: Set<string>) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(Array.from(ids)));
-  } catch {}
-}
-
-export default function FavoriteButton({ id, size = 40 }: { id: string; size?: number }) {
+export default function FavoriteButton({ id }: { id: string }) {
   const [fav, setFav] = useState(false);
 
   useEffect(() => {
-    const s = readFavorites();
-    setFav(s.has(id));
+    try {
+      const raw = localStorage.getItem("fav_ids") || "[]";
+      const arr: string[] = JSON.parse(raw);
+      setFav(arr.includes(id));
+    } catch {}
   }, [id]);
 
-  function toggle(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    const s = readFavorites();
-    if (s.has(id)) s.delete(id);
-    else s.add(id);
-    writeFavorites(s);
-    setFav(s.has(id));
+  function toggle() {
+    try {
+      const raw = localStorage.getItem("fav_ids") || "[]";
+      let arr: string[] = JSON.parse(raw);
+      if (arr.includes(id)) {
+        arr = arr.filter((x) => x !== id);
+        setFav(false);
+      } else {
+        arr.push(id);
+        setFav(true);
+      }
+      localStorage.setItem("fav_ids", JSON.stringify(arr));
+    } catch {}
   }
 
   return (
     <button
-      onClick={toggle}
       aria-pressed={fav}
-      aria-label={fav ? "Remove from saved" : "Save home"}
-      className="grid place-items-center rounded-full bg-white/95 border shadow-sm hover:shadow transition"
-      style={{ width: size, height: size }}
+      onClick={toggle}
+      title={fav ? "Remove from favorites" : "Save to favorites"}
+      className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow hover:bg-white"
     >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill={fav ? "#144a8d" : "none"} stroke="#144a8d" strokeWidth="1.8">
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      <svg
+        viewBox="0 0 24 24"
+        className={`h-5 w-5 ${fav ? "fill-rose-500 stroke-rose-500" : "fill-transparent stroke-slate-700"}`}
+        strokeWidth={1.8}
+      >
+        <path d="M12 21s-6.716-4.088-9.164-7.32C1.19 11.75 1 9.928 2.06 8.56 3.5 6.72 6.3 6.41 8 8.06L12 12l4-3.94c1.7-1.65 4.5-1.34 5.94.5 1.06 1.37.87 3.19-.776 5.12C18.716 16.912 12 21 12 21Z" />
       </svg>
     </button>
   );

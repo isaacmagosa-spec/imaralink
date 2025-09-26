@@ -1,89 +1,47 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseClient } from "@/lib/supabaseClient";
-
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-
-type Listing = {
-  id?: string;
-  created_at?: string;
-  title: string;
-  type: "rent" | "sale";
-  price: number;
-  currency: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  city?: string | null;
-  area?: string | null;
-  location?: unknown | null;
-  description?: string | null;
-  amenities?: string[] | null;
-  images?: string[] | null;
-  status?: "active" | "inactive";
-  contact_name?: string | null;
-  contact_phone?: string | null;
-};
-
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabaseClient();
-    const { searchParams } = new URL(req.url);
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    const token = authHeader?.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : null;
 
-    const q = searchParams.get("q") ?? "";
-    const city = searchParams.get("city") ?? "";
-    const type = searchParams.get("type") ?? "";
-    const minPrice = Number(searchParams.get("minPrice") ?? "") || undefined;
-    const maxPrice = Number(searchParams.get("maxPrice") ?? "") || undefined;
-    const bedrooms = Number(searchParams.get("bedrooms") ?? "") || undefined;
-    const bathrooms = Number(searchParams.get("bathrooms") ?? "") || undefined;
+    const body = await req.json().catch(() => ({}));
 
-    const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
-    const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? "12")));
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+    const title = String(body.title ?? "").trim();
+    const type = body.type === "rent" || body.type === "sale" ? body.type : undefined;
+    const price = Number.isFinite(Number(body.price)) ? Number(body.price) : NaN;
+    const currency = String(body.currency ?? "").trim().toUpperCase();
+    if (!title || !type || !Number.isFinite(price) || price <= 0 || !currency) {
+      return json({ error: "Invalid payload: { title, type, price>0, currency }" }, 400);
+    }
 
-    let query = supabase
+    const bedrooms = body.bedrooms === null || body.bedrooms === undefined ? null : Math.max(0, Number(body.bedrooms));
+    const bathrooms = body.bathrooms === null || body.bathrooms === undefined ? null : Math.max(0, Number(body.bathrooms));
+    const city = body.city ? String(body.city).trim() : null;
+    const area = body.area ? String(body.area).trim() : null;
+    const description = body.description ? String(body.description).trim() : null;
+
+    let images: string[] | null = null;
+    if (Array.isArray(body.images)) {
+      images = body.images.map((u: any) => String(u).trim()).filter(Boolean).slice(0, 10);
+      if (images.length === 0) images = null;
+    }
+
+    let owner_id: string | null = null;
+    if (token) {
+      const anon = getSupabaseClient();
+      const { data: u } = await anon.auth.getUser(token);
+      owner_id = u?.user?.id ?? null;
+    }
+
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin
       .from("listings")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false });
+      .insert([{ title, type, price, currency, bedrooms, bathrooms, city, area, description, images, status: "active", owner_id }])
+      .select("*")
+      .single();
 
-    if (q) {
-      query = query.ilike("title", `%${q}%`);
-    }
-    if (city) {
-      query = query.ilike("city", `%${city}%`);
-    }
-    if (type) {
-      query = query.eq("type", type);
-    }
-    if (typeof minPrice === "number") {
-      query = query.gte("price", minPrice);
-    }
-    if (typeof maxPrice === "number") {
-      query = query.lte("price", maxPrice);
-    }
-    if (typeof bedrooms === "number") {
-      query = query.gte("bedrooms", bedrooms);
-    }
-    if (typeof bathrooms === "number") {
-      query = query.gte("bathrooms", bathrooms);
-    }
-
-    query = query.range(from, to);
-
-    const { data, error, count } = await query;
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    return NextResponse.json({
-      listings: (data ?? []) as Listing[],
-      page,
-      limit,
-      total: count ?? 0,
-    });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    if (error) return json({ error: error.message }, 400);
+    return json({ listing: data }, 201);
+  } catch (e: any) {
+    return json({ error: e?.message ?? "Unexpected error" }, 500);
   }
 }

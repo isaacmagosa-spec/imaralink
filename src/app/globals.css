@@ -1,69 +1,30 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Brand variables (navy theme) */
-:root {
-  --color-brand-50:  #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-200: #c7d2fe;
-  --color-brand-300: #a5b4fc;
-  --color-brand-400: #818cf8;
-  --color-brand-500: #6366f1; /* accent */
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-brand-800: #3730a3;
-  --color-brand-900: #1e1b4b; /* deep navy */
-
-  --color-surface: #0f172a;  /* slate-900 */
-  --color-panel:   #111827;  /* gray-900  */
-  --color-soft:    #0b1220;
-
-  color-scheme: dark;
-}
-
-html, body { height: 100%; }
-
-body {
-  /* Use plain CSS for the complex background to avoid PostCSS parsing issues */
-  background:
-    radial-gradient(60% 60% at 20% 10%, rgba(79, 70, 229, 0.12), transparent 60%),
-    radial-gradient(40% 40% at 100% 0%, rgba(30, 27, 75, 0.7), transparent 60%),
-    var(--color-surface);
-  color: white;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Card & hover polish */
+/* subtle glass cards on navy */
 .card {
-  /* keep @apply simple utilities only */
-  @apply rounded-2xl border border-white/10 transition;
-  background-color: var(--color-soft);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-}
-.card:hover {
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  @apply rounded-2xl border border-white/10 bg-white/70 p-4 shadow-sm backdrop-blur;
 }
 
-/* Buttons */
+/* inputs */
+.input {
+  @apply w-full rounded-xl border border-slate-300/70 bg-white/80 px-3 py-2 text-slate-900 placeholder-slate-400 outline-none focus:ring-2 focus:ring-blue-600;
+}
+
+.select {
+  @apply w-full rounded-xl border border-slate-300/70 bg-white/80 px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-blue-600;
+}
+
 .btn {
-  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition;
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium transition;
 }
 .btn-primary {
-  @apply text-white;
-  background-color: #4f46e5; /* brand-600 */
-  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.35);
+  @apply btn bg-blue-600 text-white hover:bg-blue-700;
 }
-.btn-primary:hover { background-color: #6366f1; } /* brand-500 */
-
-.btn-outline {
-  @apply text-white/90 border;
-  border-color: rgba(255, 255, 255, 0.2);
+.btn-ghost {
+  @apply btn bg-white/0 text-white hover:bg-white/10;
 }
-.btn-outline:hover { border-color: rgba(255, 255, 255, 0.4); }
-
-/* Pill tags */
-.badge {
-  @apply inline-flex items-center rounded-full px-2.5 py-1 text-[11px] uppercase tracking-wide;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+.btn-light {
+  @apply btn bg-white text-blue-900 hover:bg-slate-100;
 }

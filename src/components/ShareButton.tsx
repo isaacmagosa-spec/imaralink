@@ -1,27 +1,23 @@
-'use client';
+"use client";
 
-import React from 'react';
-
-export default function ShareButton({ url, title }: { url: string; title: string; }) {
-  async function onShare() {
+export default function ShareButton({ url, title }: { url: string; title: string }) {
+  async function share() {
     try {
       if (navigator.share) {
-        await navigator.share({ title, url });
+        await navigator.share({ url, title, text: title });
       } else {
         await navigator.clipboard.writeText(url);
-        alert('Link copied to clipboard!');
+        alert("Link copied to clipboard");
       }
     } catch {
-      // user cancelled or share not available
+      // user cancelled or no permission
     }
   }
 
   return (
     <button
-      type="button"
-      onClick={onShare}
-      className="rounded-lg border px-3 py-1.5 text-sm text-[var(--ink-700)] hover:bg-[var(--brand-50)]"
-      aria-label="Share listing"
+      onClick={share}
+      className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:brightness-110"
       title="Share"
     >
       Share

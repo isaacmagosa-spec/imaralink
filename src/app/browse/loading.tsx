@@ -1,16 +1,15 @@
-import { ListingCardSkeleton } from "@/components/Skeleton";
+import { FilterSkeleton, ListingsGridSkeleton } from "@/components/Skeletons";
 
-export default function Loading() {
+export default function LoadingBrowse() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-4 h-6 w-48 rounded-lg bg-white/20" />
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-md">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <ListingCardSkeleton key={i} />
-          ))}
-        </div>
-      </section>
+      <h1 className="text-2xl font-bold text-white">Browse Listings</h1>
+      <div className="mt-6">
+        <FilterSkeleton />
+      </div>
+      <div className="mt-6">
+        <ListingsGridSkeleton count={6} />
+      </div>
     </main>
   );
 }

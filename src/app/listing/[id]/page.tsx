@@ -1,7 +1,5 @@
-import { notFound } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import Gallery from "@/components/Gallery";
-import StickyContactCard from "@/components/StickyContactCard";
+import Link from "next/link";
 
 export const revalidate = 0;
 
@@ -9,7 +7,6 @@ type Params = { id: string };
 
 type Listing = {
   id: string;
-  created_at: string;
   title: string;
   type: "rent" | "sale";
   price: number;
@@ -19,106 +16,84 @@ type Listing = {
   city?: string | null;
   area?: string | null;
   description?: string | null;
-  amenities?: string[] | null;
   images?: string[] | null;
+  created_at?: string | null;
 };
 
-export async function generateMetadata({ params }: { params: Promise<Params> }) {
-  const { id } = await params;
+async function getListing(id: string) {
   const supabase = getSupabaseClient();
-  const { data } = await supabase.from("listings").select("title,city,area").eq("id", id).maybeSingle();
-
-  const t = data?.title ?? "Listing";
-  const loc = [data?.area, data?.city].filter(Boolean).join(", ");
-  return {
-    title: loc ? `${t} · ${loc} · ImaraLink` : `${t} · ImaraLink`,
-  };
+  const { data, error } = await supabase.from("listings").select("*").eq("id", id).maybeSingle();
+  if (error) {
+    console.error("listing fetch error:", error.message);
+    return null;
+  }
+  return (data as Listing) ?? null;
 }
 
 export default async function ListingPage({ params }: { params: Promise<Params> }) {
   const { id } = await params;
-
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase.from("listings").select("*").eq("id", id).maybeSingle();
-
-  if (error) {
-    // Surface 404 for not found, otherwise generic
-    if ((error as any).code === "PGRST116") notFound();
+  const l = await getListing(id);
+  if (!l) {
+    return (
+      <div className="card">
+        <h1 className="text-lg font-semibold">Listing not found</h1>
+        <p className="text-slate-600">Try browsing other properties.</p>
+        <Link href="/browse" className="btn-primary mt-4 inline-block">Back to Browse</Link>
+      </div>
+    );
   }
-  if (!data) notFound();
 
-  const l = data as Listing;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": l.type === "sale" ? "Offer" : "RentalProperty",
+    name: l.title,
+    description: l.description,
+    url: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://imaralink-app.vercel.app"}/listing/${id}`,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: l.area,
+      addressRegion: l.city,
+      addressCountry: "KE",
+    },
+    offers: {
+      "@type": "Offer",
+      price: l.price,
+      priceCurrency: l.currency ?? "KES",
+      availability: "https://schema.org/InStock",
+    },
+  };
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="grid gap-8 lg:grid-cols-12">
-        {/* Left: gallery + details */}
-        <div className="lg:col-span-8 space-y-6">
-          <Gallery images={l.images} />
+    <>
+      <script type="application/ld+json" suppressHydrationWarning>
+        {JSON.stringify(jsonLd)}
+      </script>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h1 className="text-2xl font-bold text-slate-900">{l.title}</h1>
-            <div className="mt-1 text-slate-600">
-              {(l.city ?? "—")}{l.area ? ` • ${l.area}` : ""}
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg bg-slate-50 p-3">
-                <div className="text-xs uppercase text-slate-500">Type</div>
-                <div className="text-sm font-semibold text-slate-900">{l.type === "sale" ? "Buy" : "Rent"}</div>
-              </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <div className="text-xs uppercase text-slate-500">Bedrooms</div>
-                <div className="text-sm font-semibold text-slate-900">{l.bedrooms ?? 0}</div>
-              </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <div className="text-xs uppercase text-slate-500">Bathrooms</div>
-                <div className="text-sm font-semibold text-slate-900">{l.bathrooms ?? 0}</div>
-              </div>
-            </div>
-
-            {l.description && (
-              <div className="mt-5">
-                <h2 className="text-lg font-semibold text-slate-900">About this home</h2>
-                <p className="mt-2 whitespace-pre-line text-slate-700">{l.description}</p>
-              </div>
+      <div className="grid gap-6 md:grid-cols-5">
+        <div className="md:col-span-3 card">
+          <div className="mb-3 h-64 w-full overflow-hidden rounded-xl bg-slate-100 grid place-items-center text-xs text-slate-500">
+            {Array.isArray(l.images) && l.images.length > 0 ? (
+              <img src={l.images[0]} alt={l.title} className="h-full w-full object-cover" />
+            ) : (
+              <span>Photo coming soon</span>
             )}
-
-            {Array.isArray(l.amenities) && l.amenities.length > 0 && (
-              <div className="mt-5">
-                <h2 className="text-lg font-semibold text-slate-900">Amenities</h2>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {l.amenities.map((a, i) => (
-                    <span
-                      key={i}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
-                    >
-                      {a}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900">{l.title}</h1>
+          <p className="mt-2 text-slate-700">{l.description ?? "No description provided."}</p>
         </div>
 
-        {/* Right: sticky contact card */}
-        <div className="lg:col-span-4">
-          <StickyContactCard
-            listing={{
-              id: l.id,
-              title: l.title,
-              type: l.type,
-              price: l.price,
-              currency: l.currency,
-              bedrooms: l.bedrooms,
-              bathrooms: l.bathrooms,
-              city: l.city,
-              area: l.area,
-            }}
-          />
-        </div>
+        <aside className="md:col-span-2 card">
+          <div className="text-blue-700 text-2xl font-bold">
+            {new Intl.NumberFormat("en-KE", { style: "currency", currency: l.currency }).format(l.price)}
+          </div>
+          <div className="mt-2 text-slate-700">
+            {(l.city ?? "—")}{l.area ? ` • ${l.area}` : ""} • {(l.bedrooms ?? 0)} bed · {(l.bathrooms ?? 0)} bath
+          </div>
+          <Link href={`/listing/${l.id}/contact`} className="btn-primary mt-4 inline-block w-full text-center">
+            Contact agent / owner
+          </Link>
+        </aside>
       </div>
-    </main>
+    </>
   );
 }
