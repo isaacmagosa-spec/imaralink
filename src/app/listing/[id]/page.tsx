@@ -1,11 +1,17 @@
+import { notFound } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import Link from "next/link";
+import Gallery from "@/components/Gallery";
+import StickyContactCard from "@/components/StickyContactCard";
+
+export const revalidate = 0;
+
+type Params = { id: string };
 
 type Listing = {
   id: string;
   created_at: string;
   title: string;
-  type: "rent" | "sale" | "stay";
+  type: "rent" | "sale";
   price: number;
   currency: string;
   bedrooms?: number | null;
@@ -13,116 +19,105 @@ type Listing = {
   city?: string | null;
   area?: string | null;
   description?: string | null;
+  amenities?: string[] | null;
   images?: string[] | null;
 };
 
-function money(n: number, cur: string) {
-  try {
-    return new Intl.NumberFormat("en-KE", { style: "currency", currency: cur }).format(n);
-  } catch {
-    return `${cur} ${n.toLocaleString()}`;
-  }
-}
-
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<Params> }) {
   const { id } = await params;
   const supabase = getSupabaseClient();
-  const { data } = await supabase.from("listings").select("title,city,area,type,price,currency").eq("id", id).maybeSingle();
-  const t = data?.title ? `${data.title} • ImaraLink` : "Listing • ImaraLink";
+  const { data } = await supabase.from("listings").select("title,city,area").eq("id", id).maybeSingle();
+
+  const t = data?.title ?? "Listing";
+  const loc = [data?.area, data?.city].filter(Boolean).join(", ");
   return {
-    title: t,
-    openGraph: {
-      title: t,
-      description: data ? `${data.city ?? ""} ${data.area ? "• " + data.area : ""} — ${money(data.price, data.currency)}` : undefined,
-    },
+    title: loc ? `${t} · ${loc} · ImaraLink` : `${t} · ImaraLink`,
   };
 }
 
-export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ListingPage({ params }: { params: Promise<Params> }) {
   const { id } = await params;
+
   const supabase = getSupabaseClient();
   const { data, error } = await supabase.from("listings").select("*").eq("id", id).maybeSingle();
 
-  if (error || !data) {
-    return (
-      <main className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold">Listing not available</h1>
-        <p className="text-white/70 mt-2">It may have been removed or is temporarily unavailable.</p>
-        <div className="mt-6">
-          <Link href="/browse" className="btn btn-primary">Back to browse</Link>
-        </div>
-      </main>
-    );
+  if (error) {
+    // Surface 404 for not found, otherwise generic
+    if ((error as any).code === "PGRST116") notFound();
   }
+  if (!data) notFound();
 
   const l = data as Listing;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="grid grid-cols-12 gap-2">
-            <div className="col-span-12 md:col-span-7 overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-900/40 to-indigo-900/10 h-64 md:h-80 flex items-center justify-center">
-              <span className="text-sm text-white/70">Main photo</span>
+      <div className="grid gap-8 lg:grid-cols-12">
+        {/* Left: gallery + details */}
+        <div className="lg:col-span-8 space-y-6">
+          <Gallery images={l.images} />
+
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h1 className="text-2xl font-bold text-slate-900">{l.title}</h1>
+            <div className="mt-1 text-slate-600">
+              {(l.city ?? "—")}{l.area ? ` • ${l.area}` : ""}
             </div>
-            <div className="col-span-12 md:col-span-5 grid grid-cols-2 gap-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="overflow-hidden rounded-2xl bg-white/10 h-24 md:h-36 flex items-center justify-center">
-                  <span className="text-[11px] text-white/70">Photo {i + 2}</span>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg bg-slate-50 p-3">
+                <div className="text-xs uppercase text-slate-500">Type</div>
+                <div className="text-sm font-semibold text-slate-900">{l.type === "sale" ? "Buy" : "Rent"}</div>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <div className="text-xs uppercase text-slate-500">Bedrooms</div>
+                <div className="text-sm font-semibold text-slate-900">{l.bedrooms ?? 0}</div>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <div className="text-xs uppercase text-slate-500">Bathrooms</div>
+                <div className="text-sm font-semibold text-slate-900">{l.bathrooms ?? 0}</div>
+              </div>
+            </div>
+
+            {l.description && (
+              <div className="mt-5">
+                <h2 className="text-lg font-semibold text-slate-900">About this home</h2>
+                <p className="mt-2 whitespace-pre-line text-slate-700">{l.description}</p>
+              </div>
+            )}
+
+            {Array.isArray(l.amenities) && l.amenities.length > 0 && (
+              <div className="mt-5">
+                <h2 className="text-lg font-semibold text-slate-900">Amenities</h2>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {l.amenities.map((a, i) => (
+                    <span
+                      key={i}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
+                    >
+                      {a}
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <h1 className="mt-6 text-2xl font-bold leading-tight">{l.title}</h1>
-          <div className="mt-1 text-white/70">
-            {(l.city ?? "—")}{l.area ? ` • ${l.area}` : ""} • <span className="uppercase text-xs tracking-wide">{l.type}</span>
-          </div>
-
-          <div className="mt-6 grid sm:grid-cols-3 gap-3">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs text-white/60">Price</div>
-              <div className="text-lg font-semibold">{money(l.price, l.currency)}</div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs text-white/60">Bedrooms</div>
-              <div className="text-lg font-semibold">{l.bedrooms ?? 0}</div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs text-white/60">Bathrooms</div>
-              <div className="text-lg font-semibold">{l.bathrooms ?? 0}</div>
-            </div>
-          </div>
-
-          <section className="mt-8">
-            <h2 className="text-lg font-semibold">About this place</h2>
-            <p className="mt-2 text-white/80 leading-relaxed">
-              {l.description ?? "No description provided yet."}
-            </p>
-          </section>
-
-          <section className="mt-8">
-            <h2 className="text-lg font-semibold">Location</h2>
-            <div className="mt-3 h-56 rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-900/30 to-indigo-900/10 flex items-center justify-center">
-              <span className="text-sm text-white/70">Map placeholder</span>
-            </div>
+              </div>
+            )}
           </section>
         </div>
 
-        <aside className="lg:col-span-1">
-          <div className="sticky top-24 rounded-2xl border border-white/10 bg-white/5 p-5 space-y-4">
-            <div>
-              <div className="text-xs text-white/60">Price</div>
-              <div className="text-2xl font-bold">{money(l.price, l.currency)}</div>
-            </div>
-            <a href={`/listing/${l.id}/contact`} className="btn btn-primary w-full text-center">
-              Inquire
-            </a>
-            <div className="text-xs text-white/60">
-              Safe messaging—your contact details are only shared when you choose.
-            </div>
-          </div>
-        </aside>
+        {/* Right: sticky contact card */}
+        <div className="lg:col-span-4">
+          <StickyContactCard
+            listing={{
+              id: l.id,
+              title: l.title,
+              type: l.type,
+              price: l.price,
+              currency: l.currency,
+              bedrooms: l.bedrooms,
+              bathrooms: l.bathrooms,
+              city: l.city,
+              area: l.area,
+            }}
+          />
+        </div>
       </div>
     </main>
   );
