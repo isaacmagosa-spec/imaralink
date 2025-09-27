@@ -1,47 +1,46 @@
-export async function POST(req: NextRequest) {
+// src/app/api/listings/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { getSupabaseClient } from "@/lib/supabaseClient";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(req: NextRequest) {
   try {
-    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
-    const token = authHeader?.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : null;
+    const supabase = getSupabaseClient();
+    const { searchParams } = new URL(req.url);
 
-    const body = await req.json().catch(() => ({}));
+    const q = (searchParams.get("q") || "").trim();
+    const t = searchParams.get("type") || "";
+    const idsParam = searchParams.get("ids") || "";
 
-    const title = String(body.title ?? "").trim();
-    const type = body.type === "rent" || body.type === "sale" ? body.type : undefined;
-    const price = Number.isFinite(Number(body.price)) ? Number(body.price) : NaN;
-    const currency = String(body.currency ?? "").trim().toUpperCase();
-    if (!title || !type || !Number.isFinite(price) || price <= 0 || !currency) {
-      return json({ error: "Invalid payload: { title, type, price>0, currency }" }, 400);
-    }
-
-    const bedrooms = body.bedrooms === null || body.bedrooms === undefined ? null : Math.max(0, Number(body.bedrooms));
-    const bathrooms = body.bathrooms === null || body.bathrooms === undefined ? null : Math.max(0, Number(body.bathrooms));
-    const city = body.city ? String(body.city).trim() : null;
-    const area = body.area ? String(body.area).trim() : null;
-    const description = body.description ? String(body.description).trim() : null;
-
-    let images: string[] | null = null;
-    if (Array.isArray(body.images)) {
-      images = body.images.map((u: any) => String(u).trim()).filter(Boolean).slice(0, 10);
-      if (images.length === 0) images = null;
-    }
-
-    let owner_id: string | null = null;
-    if (token) {
-      const anon = getSupabaseClient();
-      const { data: u } = await anon.auth.getUser(token);
-      owner_id = u?.user?.id ?? null;
-    }
-
-    const admin = getSupabaseAdmin();
-    const { data, error } = await admin
+    let query = supabase
       .from("listings")
-      .insert([{ title, type, price, currency, bedrooms, bathrooms, city, area, description, images, status: "active", owner_id }])
       .select("*")
-      .single();
+      .order("created_at", { ascending: false });
 
-    if (error) return json({ error: error.message }, 400);
-    return json({ listing: data }, 201);
-  } catch (e: any) {
-    return json({ error: e?.message ?? "Unexpected error" }, 500);
+    if (q) query = query.ilike("title", `%${q}%`);
+    if (t === "rent" || t === "sale") query = query.eq("type", t);
+
+    const ids = idsParam
+      ? idsParam.split(",").map((s) => s.trim()).filter(Boolean)
+      : [];
+    if (ids.length) query = query.in("id", ids);
+
+    const { data, error } = await query;
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(
+      { listings: data ?? [] },
+      { headers: { "content-type": "application/json; charset=utf-8" } }
+    );
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: String(err?.message || err) },
+      { status: 500 }
+    );
   }
 }
+
+// Keep creation at /api/listings/new

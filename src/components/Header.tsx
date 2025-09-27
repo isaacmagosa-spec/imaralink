@@ -1,30 +1,24 @@
+"use client";
 import Link from "next/link";
-import UserAvatar from "@/components/UserAvatar";
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0b1f3a]/70 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
-        <Link href="/browse" className="group inline-flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-white/90 text-blue-900 grid place-items-center font-black">
-            I
-          </div>
-          <span className="text-white text-lg font-semibold tracking-wide group-hover:opacity-90">
-            Imaralink
-          </span>
+    <header className="header-surface">
+      <div className="container flex h-14 items-center justify-between gap-4">
+        <Link href="/browse" className="flex items-center gap-2 font-semibold">
+          <span className="inline-grid h-7 w-7 place-items-center rounded-lg bg-white/10">I</span>
+          Imaralink
         </Link>
 
-        <nav className="hidden gap-2 md:flex">
-          <Link className="btn-ghost" href="/browse">Browse</Link>
-          <Link className="btn-ghost" href="/list">List your property</Link>
-          <Link className="btn-ghost" href="/saved">Saved</Link>
+        <nav className="hidden md:flex items-center gap-5 text-sm">
+          <Link href="/browse" className="hover:text-white">Browse</Link>
+          <Link href="/list" className="hover:text-white">List your property</Link>
+          <Link href="/saved" className="hover:text-white">Saved</Link>
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link className="btn-light hidden sm:inline-flex" href="/list">
-            + List property
-          </Link>
-          <UserAvatar />
+          <Link href="/list" className="btn-ghost">+ List property</Link>
+          <div className="inline-grid h-8 w-8 place-items-center rounded-full bg-white/10">U</div>
         </div>
       </div>
     </header>

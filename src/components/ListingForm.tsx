@@ -1,124 +1,159 @@
 "use client";
 
-import { useState } from "react";
+import * as React from "react";
+import { useRouter } from "next/navigation";
 
-type Payload = {
+type FormState = {
   title: string;
   type: "rent" | "sale";
-  price: number;
+  price: number | "";
   currency: string;
-  city?: string;
-  area?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  description?: string;
+  city: string;
+  area: string;
+  bedrooms: number | "";
+  bathrooms: number | "";
+  description: string;
+};
+
+const initial: FormState = {
+  title: "",
+  type: "rent",
+  price: 15000,
+  currency: "KES",
+  city: "Nairobi",
+  area: "Kileleshwa",
+  bedrooms: 0,
+  bathrooms: 0,
+  description: "",
 };
 
 export default function ListingForm() {
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const router = useRouter();
+  const [state, setState] = React.useState<FormState>(initial);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function onChange<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setState((s) => ({ ...s, [key]: value }));
+  }
+
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setErr(null);
+    setError(null);
+
+    if (!state.title.trim()) return setError("Please enter a title.");
+    if (!state.price || Number(state.price) <= 0) return setError("Enter a valid price.");
+
     setLoading(true);
-
-    const form = new FormData(e.currentTarget);
-    const payload: Payload = {
-      title: String(form.get("title") || "").trim(),
-      type: (String(form.get("type") || "rent") as "rent" | "sale"),
-      price: Number(form.get("price") || 0),
-      currency: String(form.get("currency") || "KES"),
-      city: String(form.get("city") || ""),
-      area: String(form.get("area") || ""),
-      bedrooms: Number(form.get("bedrooms") || 0),
-      bathrooms: Number(form.get("bathrooms") || 0),
-      description: String(form.get("description") || ""),
-    };
-
     try {
       const res = await fetch("/api/listings/new", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          title: state.title.trim(),
+          type: state.type,
+          price: Number(state.price),
+          currency: state.currency,
+          city: state.city.trim() || null,
+          area: state.area.trim() || null,
+          bedrooms: Number(state.bedrooms) || 0,
+          bathrooms: Number(state.bathrooms) || 0,
+          description: state.description.trim() || null,
+        }),
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(await res.text());
+
       const json = await res.json();
-      const id = json?.listing?.id || json?.id;
-      if (id) {
-        window.location.assign(`/listing/${id}`);
-        return;
-      }
-      setErr("Unexpected response. Please try again.");
-    } catch (e: any) {
-      setErr(e?.message || "Failed to create listing");
+      const id = json?.listing?.id as string | undefined;
+      router.push(id ? `/listing/${id}` : "/browse");
+    } catch (err: any) {
+      setError(err?.message ?? "Something went wrong.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-4">
-      {err && <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{err}</div>}
-
-      <div className="grid gap-2">
-        <label className="text-sm font-medium text-slate-800">Title</label>
-        <input required name="title" className="input" placeholder="e.g. Cozy bedsitter in Kileleshwa" />
+    <form onSubmit={onSubmit} className="card p-5 md:p-6 space-y-5">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-white">List your property</h1>
+        <p className="text-slate-300">Create a listing for short stay, monthly rent, or sale.</p>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3">
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-slate-800">Type</label>
-          <select name="type" className="select" defaultValue="rent">
+      {error && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+          {error}
+        </div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="md:col-span-2">
+          <label className="mb-1 block text-sm text-slate-300">Title</label>
+          <input className="input" placeholder="e.g. Cozy bedsitter in Kileleshwa"
+            value={state.title} onChange={(e) => onChange("title", e.target.value)} />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm text-slate-300">Type</label>
+          <select className="select" value={state.type}
+            onChange={(e) => onChange("type", e.target.value as "rent" | "sale")}>
             <option value="rent">Rent</option>
             <option value="sale">Sale</option>
           </select>
         </div>
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-slate-800">Price</label>
-          <input required name="price" type="number" min="0" className="input" placeholder="15000" />
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-sm text-slate-300">Price</label>
+            <input className="input" type="number" min={0} value={state.price}
+              onChange={(e) => onChange("price", e.target.value === "" ? "" : Number(e.target.value))} />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-slate-300">Currency</label>
+            <select className="select" value={state.currency}
+              onChange={(e) => onChange("currency", e.target.value)}>
+              <option value="KES">KES</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
         </div>
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-slate-800">Currency</label>
-          <select name="currency" className="select" defaultValue="KES">
-            <option value="KES">KES</option>
-          </select>
+
+        <div>
+          <label className="mb-1 block text-sm text-slate-300">City</label>
+          <input className="input" value={state.city}
+            onChange={(e) => onChange("city", e.target.value)} />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm text-slate-300">Area</label>
+          <input className="input" value={state.area}
+            onChange={(e) => onChange("area", e.target.value)} />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm text-slate-300">Bedrooms</label>
+          <input className="input" type="number" min={0} value={state.bedrooms}
+            onChange={(e) => onChange("bedrooms", e.target.value === "" ? "" : Number(e.target.value))} />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm text-slate-300">Bathrooms</label>
+          <input className="input" type="number" min={0} value={state.bathrooms}
+            onChange={(e) => onChange("bathrooms", e.target.value === "" ? "" : Number(e.target.value))} />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="mb-1 block text-sm text-slate-300">Description</label>
+          <textarea className="textarea"
+            placeholder="Tell guests/buyers about the property"
+            value={state.description}
+            onChange={(e) => onChange("description", e.target.value)} />
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-slate-800">City</label>
-          <input name="city" className="input" placeholder="Nairobi" />
-        </div>
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-slate-800">Area</label>
-          <input name="area" className="input" placeholder="Kileleshwa" />
-        </div>
-      </div>
-
-      <div className="grid gap-2 sm:grid-cols-2">
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-slate-800">Bedrooms</label>
-          <input name="bedrooms" type="number" min="0" className="input" placeholder="0" />
-        </div>
-        <div className="grid gap-2">
-          <label className="text-sm font-medium text-slate-800">Bathrooms</label>
-          <input name="bathrooms" type="number" min="0" className="input" placeholder="0" />
-        </div>
-      </div>
-
-      <div className="grid gap-2">
-        <label className="text-sm font-medium text-slate-800">Description</label>
-        <textarea name="description" rows={4} className="input" placeholder="Tell guests/buyers about the property" />
-      </div>
-
-      <div className="flex justify-end gap-3">
-        <button type="submit" className="btn-primary" disabled={loading}>
+      <div className="flex justify-end">
+        <button className="btn-primary" disabled={loading}>
           {loading ? "Creating..." : "Create listing"}
         </button>
       </div>
