@@ -2,38 +2,32 @@
   "name": "imaralink",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "20.x",
+    "npm": ">=9"
+  },
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "lint": "eslint",
-    "dev:local": "next dev --turbopack -p 3001 -H 127.0.0.1",
-    "dev:lan": "next dev --turbopack -p 3001 -H 0.0.0.0"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "node server.js",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "vercel:build": "vercel build",
+    "vercel:deploy": "vercel deploy --prebuilt --prod"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.2",
-    "clsx": "^2.1.1",
+    "@supabase/ssr": "^0.5.0",
+    "@supabase/supabase-js": "^2.45.0",
     "lucide-react": "^0.544.0",
     "next": "15.5.2",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "tailwindcss": "^4.1.13"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.5.2",
-    "tailwindcss": "4",
-    "typescript": "^5"
-  },
-  "pnpm": {
-    "allowedBuiltDependencies": [
-      "@tailwindcss/oxide",
-      "sharp",
-      "unrs-resolver"
-    ]
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "typescript": "^5.6.2"
   }
 }

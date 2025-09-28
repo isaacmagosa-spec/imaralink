@@ -14,10 +14,10 @@ export default function CategoryTabs() {
   const pathname = usePathname();
   const sp = useSearchParams();
 
-  const active = (sp.get("category") as Tab["key"]) || "monthly";
+  const active = (sp!.get("category") as Tab["key"]) || "monthly";
 
   function setCategory(key: Tab["key"]) {
-    const params = new URLSearchParams(sp.toString());
+    const params = new URLSearchParams(sp!.toString());
     if (key) params.set("category", key);
     else params.delete("category");
     // Reset page-like params if you add them later
@@ -46,3 +46,5 @@ export default function CategoryTabs() {
     </div>
   );
 }
+
+

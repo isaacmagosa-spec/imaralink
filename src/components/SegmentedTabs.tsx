@@ -15,10 +15,10 @@ export default function SegmentedTabs() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  const activeType = sp.get("type") ?? "";
+  const activeType = sp!.get("type") ?? "";
 
   function select(key: Tab["key"]) {
-    const p = new URLSearchParams(sp.toString());
+    const p = new URLSearchParams(sp!.toString());
     if (key === "") {
       p.delete("type");
     } else if (key === "stays") {
@@ -52,3 +52,4 @@ export default function SegmentedTabs() {
     </div>
   );
 }
+

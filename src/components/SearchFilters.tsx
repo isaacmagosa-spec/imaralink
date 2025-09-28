@@ -6,8 +6,8 @@ import React from "react";
 export default function SearchFilters() {
   const router = useRouter();
   const sp = useSearchParams();
-  const [q, setQ] = React.useState(sp.get("q") ?? "");
-  const [type, setType] = React.useState(sp.get("type") ?? "");
+  const [q, setQ] = React.useState(sp!.get("q") ?? "");
+  const [type, setType] = React.useState(sp!.get("type") ?? "");
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,3 +61,4 @@ export default function SearchFilters() {
     </form>
   );
 }
+

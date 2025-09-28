@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 
 export default function MobileFilters() {
   const sp = useSearchParams();
-  const q = sp.get("q") ?? "";
-  const type = sp.get("type") ?? "";
+  const q = sp!.get("q") ?? "";
+  const type = sp!.get("type") ?? "";
 
   const [open, setOpen] = useState(false);
 
@@ -79,3 +79,5 @@ export default function MobileFilters() {
     </div>
   );
 }
+
+

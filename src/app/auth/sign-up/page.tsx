@@ -9,7 +9,7 @@ export default function SignUpPage() {
   const supabase = getSupabaseClient();
   const router = useRouter();
   const sp = useSearchParams();
-  const next = sp.get("next") || "/account";
+  const next = sp!.get("next") || "/account";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -82,3 +82,5 @@ export default function SignUpPage() {
     </main>
   );
 }
+
+

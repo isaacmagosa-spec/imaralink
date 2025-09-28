@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { getBrowserSupabase } from "@/lib/supabaseBrowser";
+import { createSupabaseBrowser } from "@/lib/supabaseBrowser";
 
 export default function AuthCallback() {
   const sp = useSearchParams();
@@ -11,10 +11,10 @@ export default function AuthCallback() {
   const [message, setMessage] = useState("Finalizing sign-in…");
 
   useEffect(() => {
-    const supabase = getBrowserSupabase();
-    const code = sp.get("code");
-    const token_hash = sp.get("token_hash");
-    const type = sp.get("type");
+    const supabase = createSupabaseBrowser();
+    const code = sp!.get("code");
+    const token_hash = sp!.get("token_hash");
+    const type = sp!.get("type");
 
     (async () => {
       try {
@@ -56,3 +56,5 @@ export default function AuthCallback() {
     </main>
   );
 }
+
+

@@ -21,7 +21,7 @@ export default function QuickFilters() {
   const sp = useSearchParams();
 
   const onClick = (p: Record<string, string>) => {
-    const next = new URLSearchParams(sp.toString());
+    const next = new URLSearchParams(sp!.toString());
     Object.entries(p).forEach(([k, v]) => {
       if (v === "") next.delete(k);
       else next.set(k, v);
@@ -43,3 +43,7 @@ export default function QuickFilters() {
     </div>
   );
 }
+
+
+
+
