@@ -1,9 +1,9 @@
-services:
+﻿services:
   - type: web
     name: imaralink
     env: node
     plan: free
-    buildCommand: "npm ci --include=dev && npm run build"
+    buildCommand: "npm ci && npm run build"
     startCommand: "npm run start"
     healthCheckPath: /api/health
     envVars:
