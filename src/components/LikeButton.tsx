@@ -1,43 +1,37 @@
+// src/components/LikeButton.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { Heart } from "lucide-react";
 
 export default function LikeButton({ id }: { id: string }) {
+  const key = `like:${id}`;
   const [liked, setLiked] = useState(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem("likes") || "{}";
-    try {
-      const map = JSON.parse(raw) as Record<string, boolean>;
-      setLiked(!!map[id]);
-    } catch {
-      setLiked(false);
-    }
-  }, [id]);
+    setLiked(localStorage.getItem(key) === "1");
+  }, [key]);
 
   function toggle() {
-    const raw = localStorage.getItem("likes") || "{}";
-    let map: Record<string, boolean> = {};
-    try {
-      map = JSON.parse(raw);
-    } catch {}
-    map[id] = !liked;
-    localStorage.setItem("likes", JSON.stringify(map));
-    setLiked(!liked);
+    const next = !liked;
+    setLiked(next);
+    localStorage.setItem(key, next ? "1" : "0");
   }
 
   return (
     <button
+      type="button"
       onClick={toggle}
-      aria-label={liked ? "Remove from favorites" : "Add to favorites"}
-      className={`rounded-full border px-2.5 py-2 transition ${
-        liked
-          ? "bg-pink-500/20 border-pink-400/30 text-pink-300"
-          : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10"
-      }`}
+      aria-pressed={liked}
+      title={liked ? "Unlike" : "Like"}
+      style={{
+        borderRadius: 999, padding: "8px 12px", cursor: "pointer",
+        border: "1px solid rgba(255,255,255,.12)",
+        background: liked ? "linear-gradient(135deg,#ff7aa2,#ffbdde)" : "transparent",
+        color: liked ? "#0a0f18" : "var(--text)",
+        fontWeight: 600,
+      }}
     >
-      <Heart size={16} fill={liked ? "currentColor" : "none"} />
+      {liked ? "♥ Liked" : "♡ Like"}
     </button>
   );
 }

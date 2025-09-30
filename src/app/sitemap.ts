@@ -1,25 +1,22 @@
 import type { MetadataRoute } from "next";
-import { getSupabaseClient } from "@/lib/supabaseClient";
 
-const BASE =
-  process.env.NEXT_PUBLIC_BASE_URL ?? "https://imaralink-app.vercel.app";
+export const revalidate = 86400; // re-generate sitemap daily
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const urls: MetadataRoute.Sitemap = [
-    { url: `${BASE}/`, lastModified: new Date() },
-    { url: `${BASE}/browse`, lastModified: new Date() },
-    { url: `${BASE}/list`, lastModified: new Date() },
+export default function sitemap(): MetadataRoute.Sitemap {
+  const now = new Date().toISOString();
+
+  return [
+    {
+      url: "https://imaralink.onrender.com/",
+      changeFrequency: "weekly",
+      priority: 1,
+      lastModified: now,
+    },
+    {
+      url: "https://imaralink.onrender.com/status",
+      changeFrequency: "monthly",
+      priority: 0.3,
+      lastModified: now,
+    },
   ];
-
-  try {
-    const supabase = getSupabaseClient();
-    const { data } = await supabase.from("listings").select("id, created_at").limit(2000);
-    (data ?? []).forEach((row: any) => {
-      urls.push({
-        url: `${BASE}/listing/${row.id}`,
-        lastModified: row.created_at ? new Date(row.created_at) : new Date(),
-      });
-    });
-  } catch {}
-  return urls;
 }
