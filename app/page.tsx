@@ -1,28 +1,20 @@
-﻿import Card from ../components/Card;
-
-const listings = [
-  { id: 1, title: Listing One, subtitle: Navy themed, desc: Example card. },
-  { id: 2, title: Listing Two, subtitle: Navy themed, desc: Example card. },
-  { id: 3, title: Listing Three, subtitle: Navy themed, desc: Example card. },
-];
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <main>
-      <header className=mb-8>
-        <h1 className=text-4xl font-extrabold tracking-tight>ImaraLink</h1>
-        <p className=mt-2 text-slate-300>
-          Tailwind is <span className=px-2 py-0.5 rounded bg-emerald-600>working</span>.
+    <main className="min-h-[calc(100vh-56px)] grid place-items-center">
+      <div className="text-center px-4">
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+          From bedsitters to penthouses — <span className="text-blue-600">rent or buy</span> with confidence
+        </h1>
+        <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+          ImaraLink connects Owners & Agents with people ready to Rent & Buy. Browse verified listings or list yours in minutes.
         </p>
-      </header>
-
-      <section className=grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6>
-        {listings.map(item => (
-          <Card key={item.id} title={item.title} subtitle={item.subtitle}>
-            {item.desc}
-          </Card>
-        ))}
-      </section>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <Link href="/browse" className="rounded-2xl bg-blue-600 text-white px-4 py-2 font-semibold shadow">Browse Listings</Link>
+          <Link href="/auth" className="rounded-2xl border px-4 py-2 font-semibold hover:bg-gray-100">Owners & Agents — List a Property</Link>
+        </div>
+      </div>
     </main>
   );
 }
