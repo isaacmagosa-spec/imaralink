@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: imaralink
+    env: node
+    plan: free
+    buildCommand: "npm ci && npm run build"
+    startCommand: "npm run start"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: NEXT_PUBLIC_SITE_URL
+        value: "[https://imaralink.onrender.com](https://imaralink.onrender.com)"
