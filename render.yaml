@@ -5,6 +5,7 @@ services:
     plan: free
     buildCommand: "npm ci && npm run build"
     startCommand: "npm run start"
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
@@ -12,3 +13,5 @@ services:
         value: "1"
       - key: NEXT_PUBLIC_SITE_URL
         value: "[https://imaralink.onrender.com](https://imaralink.onrender.com)"
+      - key: NODE_VERSION
+        value: 20.13.1
