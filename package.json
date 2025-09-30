@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "node start-next.js",
+    "start": "next start -H 0.0.0.0",
     "lint": "eslint . --ext .js,.ts,.jsx,.tsx",
     "type-check": "tsc --noEmit"
   },
