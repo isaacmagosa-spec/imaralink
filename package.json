@@ -1,36 +1,36 @@
-{
-  "name": "imaralink",
-  "version": "0.1.0",
-  "private": true,
-  "engines": {
-    "node": "20.x",
-    "npm": ">=9"
-  },
-  "scripts": {
-    "dev": "next dev -p 3000",
-    "build": "next build",
-    "start": "next start -H 0.0.0.0",
-    "lint": "eslint . --ext .js,.ts,.jsx,.tsx",
-    "type-check": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@supabase/ssr": "^0.5.0",
-    "@supabase/supabase-js": "^2.46.0",
-    "lucide-react": "^0.544.0",
-    "next": "^15.5.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.13",
-    "@types/node": "^22.5.4",
-    "@types/prop-types": "^15.7.15",
-    "@types/react": "^18.3.11",
-    "autoprefixer": "^10.4.21",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "15.5.2",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.13",
-    "typescript": "^5.6.2"
-  }
+﻿{
+    "name":  "imaralink",
+    "version":  "0.1.0",
+    "private":  true,
+    "engines":  {
+                    "node":  "20.x",
+                    "npm":  "\u003e=9"
+                },
+    "scripts":  {
+                    "dev":  "next dev -p 3000",
+                    "build":  "next build",
+                    "start":  "node start-next.js",
+                    "lint":  "eslint . --ext .js,.ts,.jsx,.tsx",
+                    "type-check":  "tsc --noEmit"
+                },
+    "dependencies":  {
+                         "@supabase/ssr":  "^0.5.0",
+                         "@supabase/supabase-js":  "^2.46.0",
+                         "lucide-react":  "^0.544.0",
+                         "next":  "^15.5.2",
+                         "react":  "^18.3.1",
+                         "react-dom":  "^18.3.1"
+                     },
+    "devDependencies":  {
+                            "@tailwindcss/postcss":  "^4.1.13",
+                            "@types/node":  "^22.5.4",
+                            "@types/prop-types":  "^15.7.15",
+                            "@types/react":  "^18.3.11",
+                            "autoprefixer":  "^10.4.21",
+                            "eslint":  "^8.57.1",
+                            "eslint-config-next":  "15.5.2",
+                            "postcss":  "^8.5.6",
+                            "tailwindcss":  "^4.1.13",
+                            "typescript":  "^5.6.2"
+                        }
 }
