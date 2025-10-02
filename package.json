@@ -2,31 +2,37 @@
   "name": "imaralink",
   "version": "0.1.0",
   "private": true,
-  "engines": {
-    "node": ">=18.18.0",
-    "npm": ">=9"
+  "engines": { "node": ">=18.18.0 <25" },
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p $PORT"
   },
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start -H 0.0.0.0 -p $PORT",
+    "start": "next start -H 0.0.0.0 -p 3000",
     "start:render": "next start -H 0.0.0.0 -p $PORT",
     "lint": "eslint . --ext .js,.ts,.jsx,.tsx",
     "type-check": "tsc --noEmit"
   },
-  "dependencies": {
+ "dependencies": {
+    "next": "15.5.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@supabase/supabase-js": "^2.57.2",
     "@supabase/ssr": "^0.5.0",
-    "@supabase/supabase-js": "^2.46.0",
-    "lucide-react": "^0.544.0",
-    "next": "^15.5.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "tailwindcss": "^4.1.13",
+    "@tailwindcss/postcss": "^4.1.13",
+    "postcss": "^8.5.6",
+    "autoprefixer": "^10.4.21"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^22.5.4",
     "@types/prop-types": "^15.7.15",
     "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^8.57.1",
     "eslint-config-next": "15.5.2",
@@ -35,4 +41,3 @@
     "typescript": "^5.6.2"
   }
 }
-
